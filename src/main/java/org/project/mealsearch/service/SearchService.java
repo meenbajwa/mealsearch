@@ -34,14 +34,22 @@ public class SearchService {
         String normalized = query == null ? "" : query.trim().toLowerCase();
         searchFrequencyService.incrementAndGet(normalized);
 
-        String suggested = spellCheckerService.suggestClosestWord(normalized);
-        SpellCheckResult spellCheck = new SpellCheckResult(
-                !suggested.equals(normalized),
-                normalized,
-                suggested.equals(normalized) ? null : suggested
-        );
+        List<WordCompletionTask2.PairWF> completions = wordCompletionService.completePrefix(normalized, 5);
+        String suggested = normalized;
+        boolean corrected = false;
 
-        List<WordCompletionTask2.PairWF> completions = wordCompletionService.completePrefix(suggested, 5);
+        // Prefer prefix completions; only fall back to spell check when no completions are found.
+        if (completions.isEmpty()) {
+            suggested = spellCheckerService.suggestClosestWord(normalized);
+            corrected = !suggested.equals(normalized);
+            completions = wordCompletionService.completePrefix(suggested, 5);
+        }
+
+        SpellCheckResult spellCheck = new SpellCheckResult(
+                corrected,
+                normalized,
+                corrected ? suggested : null
+        );
         List<SearchSuggestion> suggestionList = wordCompletionService.toSuggestions(
                 completions,
                 searchFrequencyService::get,
