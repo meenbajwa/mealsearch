@@ -38,7 +38,6 @@ public class SearchService {
 
     public SearchResponse suggest(String query) {
         String normalized = query == null ? "" : query.trim().toLowerCase();
-        searchFrequencyService.incrementAndGet(normalized);
 
         List<WordCompletionTask2.PairWF> completions = wordCompletionService.completePrefix(normalized, 5);
         String suggested = normalized;
