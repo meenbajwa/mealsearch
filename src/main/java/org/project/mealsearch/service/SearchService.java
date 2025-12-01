@@ -2,6 +2,7 @@ package org.project.mealsearch.service;
 
 import org.project.mealsearch.config.MealDataLoader;
 import org.project.mealsearch.legacy.jasmeen.WordCompletionTask2;
+import org.project.mealsearch.model.SearchHitResponse;
 import org.project.mealsearch.model.SearchResponse;
 import org.project.mealsearch.model.SearchResultItem;
 import org.project.mealsearch.model.SearchSuggestion;
@@ -68,6 +69,16 @@ public class SearchService {
 
     public List<TopSearch> top() {
         return searchFrequencyService.topSearches(10, frequencyCountService::countTotalOccurrences);
+    }
+
+    public SearchHitResponse registerHit(String query) {
+        String normalized = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return new SearchHitResponse(normalized, 0, 0);
+        }
+        int total = frequencyCountService.countTotalOccurrences(normalized);
+        int freq = searchFrequencyService.incrementAndGet(normalized);
+        return new SearchHitResponse(normalized, freq, total);
     }
 
     public List<SearchResultItem> results(String query) {

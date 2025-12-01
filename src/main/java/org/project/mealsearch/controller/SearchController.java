@@ -1,6 +1,7 @@
 package org.project.mealsearch.controller;
 
 import org.project.mealsearch.model.SearchResponse;
+import org.project.mealsearch.model.SearchHitResponse;
 import org.project.mealsearch.model.SearchResultItem;
 import org.project.mealsearch.model.TopSearch;
 import org.project.mealsearch.service.SearchService;
@@ -36,5 +37,10 @@ public class SearchController {
     @GetMapping("/results")
     public List<SearchResultItem> results(@RequestParam(name = "query", defaultValue = "") String query) {
         return searchService.results(query);
+    }
+
+    @GetMapping("/hit")
+    public SearchHitResponse hit(@RequestParam(name = "query", defaultValue = "") String query) {
+        return searchService.registerHit(query);
     }
 }
