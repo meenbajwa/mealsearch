@@ -6,6 +6,7 @@ import org.project.mealsearch.legacy.hemit.BoyerMoore;
 import org.project.mealsearch.legacy.sarvesh.FrequencyCount;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.project.mealsearch.util.ResourceResolver;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -22,7 +23,8 @@ public class FrequencyCountService {
     public FrequencyCountService(MealDataLoader loader,
                                  @Value("${meals.csv-path}") String csvPath) throws IOException {
         this.loader = loader;
-        this.globalCounts = FrequencyCount.buildGlobalFrequency(List.of(Path.of(csvPath)));
+        Path resolved = ResourceResolver.resolveToPath(csvPath);
+        this.globalCounts = FrequencyCount.buildGlobalFrequency(List.of(resolved));
     }
 
     public int countTotalOccurrences(String word) {

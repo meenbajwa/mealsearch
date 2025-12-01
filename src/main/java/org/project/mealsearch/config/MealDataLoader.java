@@ -6,6 +6,7 @@ import org.project.mealsearch.model.Meal;
 import org.project.mealsearch.model.Site;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.project.mealsearch.util.ResourceResolver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -64,7 +65,7 @@ public class MealDataLoader {
     }
 
     private void loadCsv() throws IOException {
-        Path path = Path.of(csvPath);
+        Path path = ResourceResolver.resolveToPath(csvPath);
         try (BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             String headerLine = br.readLine();
             if (headerLine == null) {

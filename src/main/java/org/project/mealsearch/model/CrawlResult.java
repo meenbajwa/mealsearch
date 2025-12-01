@@ -8,5 +8,6 @@ public record CrawlResult(
         Set<String> emails,
         Set<String> phoneNumbers,
         Set<String> links,
-        List<String> visited
+        List<String> visited,
+        String phoneMessage
 ) {}

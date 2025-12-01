@@ -6,6 +6,7 @@ package org.project.mealsearch.legacy.jasmeen;
 
 import java.io.*;
 import java.util.*;
+import org.project.mealsearch.util.ResourceResolver;
 
 public class WordCompletionTask2 {
 
@@ -132,8 +133,8 @@ public class WordCompletionTask2 {
 
     static class CsvTiny implements Closeable {
         BufferedReader br;
-        CsvTiny(String path) throws IOException {
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(path), "UTF-8"));
+        CsvTiny(InputStream in) throws IOException {
+            br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
         }
         @Override public void close() throws IOException { if (br != null) br.close(); }
 
@@ -189,7 +190,7 @@ public class WordCompletionTask2 {
         String[] pref = { "title", "description" };
         String[] more = { "plan name", "features", "body", "content", "text", "summary" };
 
-        try (CsvTiny r = new CsvTiny(csvPath)) {
+        try (CsvTiny r = new CsvTiny(ResourceResolver.openStream(csvPath))) {
             String headLine = r.br.readLine();
             if (headLine == null) throw new IOException("csv is empty");
             List<String> head = CsvTiny.split(headLine);

@@ -15,26 +15,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 @Service
 public class CrawlerService {
 
     private static final Pattern EMAIL_RE = Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-    // Broader phone regex covering common international formats; further filtered by isLikelyPhone().
-    private static final Pattern PHONE_RE = Pattern.compile(
-            // US/Canada
-            "(?:\\+?1[\\s\\-\\.]?)?(?:\\([2-9]\\d{2}\\)|[2-9]\\d{2})[\\s\\-\\.]?[2-9]\\d{2}[\\s\\-\\.]?\\d{4}\\b|"
-                    // India
-                    + "(?:\\+?91[\\s\\-\\.]?)?[6-9]\\d{9}\\b|"
-                    // UK
-                    + "(?:\\+?44[\\s\\-\\.]?)?(?:0?[1-9]\\d{2,4}[\\s\\-\\.]?\\d{6,7}|0?[1-9]\\d{8,9})\\b|"
-                    // Australia
-                    + "(?:\\+?61[\\s\\-\\.]?)?(?:0?[2-8]\\d{8}|0?4\\d{8})\\b|"
-                    // Generic international 7–15 digits
-                    + "\\+\\d{1,3}[\\s\\-\\.]?\\d{3}[\\s\\-\\.]?\\d{3,4}[\\s\\-\\.]?\\d{4,6}\\b"
-    );
+    // Country-specific phone patterns (US/CA, UK, IN, AU) – restricted to these regions only.
+    private static final Pattern PHONE_US_CA = Pattern.compile("(?:\\+?1[\\s.-]?)?(?:\\([2-9]\\d{2}\\)|[2-9]\\d{2})[\\s.-]?[2-9]\\d{2}[\\s.-]?\\d{4}\\b");
+    private static final Pattern PHONE_UK = Pattern.compile("(?:\\+?44[\\s.-]?)?(?:0?7\\d{3}[\\s.-]?\\d{6}|0?\\d{2,4}[\\s.-]?\\d{3,4}[\\s.-]?\\d{3,4})\\b");
+    private static final Pattern PHONE_IN = Pattern.compile("(?:\\+?91[\\s.-]?)?[6-9]\\d{9}\\b");
+    private static final Pattern PHONE_AU = Pattern.compile("(?:\\+?61[\\s.-]?)?(?:0?[2-578]\\d{8}|0?4\\d{8})\\b");
+    private static final Pattern[] PHONE_PATTERNS = {
+            PHONE_US_CA, PHONE_UK, PHONE_IN, PHONE_AU
+    };
 
     /**
      * Crawl a single page: extract emails, phones, and links only from that page.
@@ -82,7 +77,8 @@ public class CrawlerService {
         }
         visited.add(normalize(target));
 
-        return new CrawlResult(target.toString(), emails, phones, links, new ArrayList<>(visited));
+        String phoneMessage = phones.isEmpty() ? "No valid phone numbers found (US/CA/UK/IN/AU only)" : null;
+        return new CrawlResult(target.toString(), emails, phones, links, new ArrayList<>(visited), phoneMessage);
     }
 
     private URI validate(String url) {
@@ -133,22 +129,26 @@ public class CrawlerService {
 
     private void extractPhones(String text, Set<String> phones) {
         if (text == null) return;
-        Matcher m = PHONE_RE.matcher(text);
-        while (m.find()) {
-            String raw = m.group().trim();
-            String digits = raw.replaceAll("[^0-9]", "");
-            if (!isLikelyPhone(digits)) {
-                continue;
+        for (Pattern p : PHONE_PATTERNS) {
+            Matcher m = p.matcher(text);
+            while (m.find()) {
+                String raw = m.group().trim();
+                String digits = raw.replaceAll("[^0-9]", "");
+                if (!isLikelyPhone(digits)) {
+                    continue;
+                }
+                phones.add(digits);
             }
-            phones.add(digits);
         }
     }
 
     private boolean isLikelyPhone(String digits) {
         int len = digits.length();
-        if (len < 7 || len > 15) return false;
+        // Tighten lengths: country-specific patterns should already constrain; keep 9-15 as safety net.
+        if (len < 9 || len > 15) return false;
         if (digits.matches("(\\d)\\1+")) return false; // all same digit
         if ("1234567890".equals(digits) || "0123456789".equals(digits) || "9876543210".equals(digits)) return false;
+        // US/CA length checks
         if (len == 10 && (digits.charAt(0) == '0' || digits.charAt(0) == '1')) return false;
         if (len == 11 && digits.startsWith("1") && (digits.charAt(1) == '0' || digits.charAt(1) == '1')) return false;
         return true;
