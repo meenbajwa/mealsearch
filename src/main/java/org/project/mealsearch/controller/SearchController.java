@@ -1,6 +1,7 @@
 package org.project.mealsearch.controller;
 
 import org.project.mealsearch.model.SearchResponse;
+import org.project.mealsearch.model.SearchResultItem;
 import org.project.mealsearch.model.TopSearch;
 import org.project.mealsearch.service.SearchService;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -30,5 +31,10 @@ public class SearchController {
     @GetMapping("/top")
     public List<TopSearch> top() {
         return searchService.top();
+    }
+
+    @GetMapping("/results")
+    public List<SearchResultItem> results(@RequestParam(name = "query", defaultValue = "") String query) {
+        return searchService.results(query);
     }
 }
